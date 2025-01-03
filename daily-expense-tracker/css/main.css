@@ -1,0 +1,253 @@
+/* General Styles */
+body {
+    background: #EBECF0;
+    font-family: 'Montserrat', sans-serif;
+    margin: 0;
+    padding: 0;
+    letter-spacing: -0.2px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh; /* Full viewport height */
+}
+
+.container {
+    max-width: 1200px;
+    margin: auto;
+    padding: 20px;
+}
+
+/* Glassmorphism Card Style */
+.card {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    border-radius: 10px;
+    box-shadow: 0 6px 30px rgba(0, 0, 0, 0.3);
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+/* Headings */
+h2, h3, h4 {
+    color: #333;
+    text-shadow: 1px 1px 1px #FFF;
+}
+
+/* Table Styles */
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+table, th, td {
+    border: 1px solid #ddd;
+}
+
+th, td {
+    padding: 8px;
+    text-align: left;
+}
+
+tr:nth-child(even) {
+    background-color: rgba(255, 255, 255, 0.2);
+}
+
+tr:hover {
+    background-color: rgba(75, 192, 192, 0.3);
+}
+
+/* Dashboard Specific Styles */
+.dashboard-summary {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.summary-card {
+    flex: 1;
+    margin-right: 20px;
+}
+
+.budget-visual {
+    flex: 1;
+}
+
+/* Form container */
+.register-form {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    border-radius: 10px;
+    padding: 20px;
+    width: 300px;
+    box-shadow: 0 6px 30px rgba(0, 0, 0, 0.3);
+    text-align: center;
+}
+
+/* Make inputs smaller */
+.register-form input[type="text"],
+.register-form input[type="email"],
+.register-form input[type="password"],
+.register-form select {
+    width: 90%;
+    padding: 8px;
+    margin: 10px 0;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 14px;
+    box-shadow: -5px -5px 20px #FFF, 5px 5px 20px #BABECC;
+}
+
+/* Dropdown specific styles */
+.register-form select {
+    height: 40px; /* Increased height for better aesthetics */
+}
+
+/* Button styling */
+.register-form button {
+    padding: 10px;
+    width: 100%;
+    background-color: #4bc0c0;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    box-shadow: -5px -5px 20px #FFF, 5px 5px 20px #BABECC;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.register-form button:hover {
+    background-color: #36a2a2;
+}
+
+/* Error Message */
+.error {
+    color: red;
+    font-size: 12px;
+    margin-bottom: 10px;
+}
+
+/* Inbox Styles */
+.inbox {
+    margin-top: 20px;
+}
+
+/* Account Request Styles */
+.account-request {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px;
+    border: 1px solid #ddd;
+    margin-bottom: 10px;
+    border-radius: 5px;
+}
+
+.account-request button {
+    margin-left: 10px;
+    background-color: rgba(255, 255, 255, 0.1);
+    padding: 10px;
+    box-shadow: -5px -5px 20px #FFF, 5px 5px 20px #BABECC;
+    border-radius: 10px;
+}
+
+/* Linked Accounts Styles */
+.linked-accounts {
+    display: flex;
+    flex-direction: column;
+}
+
+.linked-accounts .account {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px;
+    border: 1px solid #ddd;
+    margin-bottom: 10px;
+    border-radius: 5px;
+}
+
+.linked-accounts .account:hover {
+    background-color: rgba(75, 192, 192, 0.2);
+}
+
+/* Budget Visualization Styles */
+.circular-timer {
+    border-radius: 50%;
+    border: 10px solid rgba(75, 192, 192, 0.5);
+    position: relative;
+    width: 100px;
+    height: 100px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    box-shadow: inset 2px 2px 5px #BABECC, inset -5px -5px 10px #FFF;
+}
+
+/* JavaScript Animation Fade-in */
+.fade-in {
+    animation: fadeIn 0.5s ease-in;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+/* Button Styles */
+.btn {
+    padding: 10px 15px;
+    border: none;
+    border-radius: 5px;
+    background-color: #4bc0c0;
+    color: white;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    box-shadow: -5px -5px 20px #FFF, 5px 5px 20px #BABECC;
+}
+
+.btn:hover {
+    background-color: #36a2a2;
+    box-shadow: -2px -2px 5px #FFF, 2px 2px 5px #BABECC;
+}
+
+.btn:focus {
+    outline: 2px solid #4bc0c0;
+}
+
+.btn:active {
+    background-color: #36a2a2;
+    box-shadow: inset 1px 1px 2px #BABECC, inset -1px -1px 2px #FFF;
+}
+
+/* Responsive Styles */
+@media (max-width: 768px) {
+    .dashboard-summary {
+        flex-direction: column;
+    }
+
+    .summary-card, .budget-visual {
+        margin-right: 0;
+        margin-bottom: 20px;
+    }
+}
+
+/* Additional Styles for the Form */
+.register-form label {
+    margin-bottom: 5px;
+    font-weight: bold;
+    display: block; /* Ensure the label is block to occupy full width */
+}
+
+.register-form .gender-label {
+    margin: 10px 0;
+    font-weight: bold;
+}
+
+/* Responsive Form Styles */
+@media (max-width: 768px) {
+    .register-form {
+        width: 100%; /* Full width on small screens */
+    }
+}
