@@ -58,9 +58,9 @@ $expensesByCategory = getCategoryExpenses($userId);
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Monthly Budget and Expenses - Elegant Expense Tracker</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
     <style>
-         @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap');
 
         :root {
             --primary-color: #6c5ce7;
@@ -303,78 +303,140 @@ $expensesByCategory = getCategoryExpenses($userId);
                 </div>
             </div>
             <div class="chart-container">
-                <canvas id="expensePieChart"></canvas>
+                <div id="expenseLineChart"></div>
             </div>
         </div>
 
         <div class="container">
             <h2>Monthly Expenses History</h2>
             <div class="chart-container">
-                <canvas id="monthlyExpensesChart"></canvas>
+                <div id="monthlyExpensesChart"></div>
             </div>
         </div>
     </div>
 
     <script>
-        // Pie Chart for Expenses by Category
-        const pieCtx = document.getElementById('expensePieChart').getContext('2d');
-        new Chart(pieCtx, {
-            type: 'pie',
-            data: {
-                labels: <?php echo json_encode(array_keys($expensesByCategory)); ?>,
-                datasets: [{
-                    data: <?php echo json_encode(array_values($expensesByCategory)); ?>,
-                    backgroundColor: [
-                        '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40'
-                    ]
-                }]
-            },
-            options: {
-                responsive: true,
-                title: {
-                    display: true,
-                    text: 'Expenses by Category'
+        // Line Chart for Expenses by Category
+        const lineOptions = {
+            chart: {
+                type: 'line',
+                height: 300,
+                toolbar: {
+                    show: false
                 }
-            }
-        });
+            },
+            series: [{
+                name: 'Expenses',
+                data: <?php echo json_encode(array_values($expensesByCategory)); ?>
+            }],
+            xaxis: {
+                categories: <?php echo json_encode(array_keys($expensesByCategory)); ?>,
+                title: {
+                    text: 'Categories'
+                }
+            },
+            yaxis: {
+                title: {
+                    text: 'Expenses (₹)'
+                },
+                min: 0
+            },
+            title: {
+                text: 'Expenses by Category',
+                align: 'center',
+                style: {
+                    fontSize: '16px',
+                    fontWeight: 'bold',
+                    color: '#2c3e50'
+                }
+            },
+            tooltip: {
+                theme: 'dark',
+                style: {
+                    fontSize: '14px',
+                    fontWeight: 'bold',
+                    color: '#fff',
+                },
+                x: {
+                    show: true,
+                },
+                y: {
+                    formatter: function(val) {
+                        return '₹' + val;
+                    }
+                }
+            },
+            colors: ['#FF6384'],
+        };
+
+        const lineChart = new ApexCharts(document.querySelector("#expenseLineChart"), lineOptions);
+        lineChart.render();
 
         // Bar Chart for Monthly Expenses History
-        const barCtx = document.getElementById('monthlyExpensesChart').getContext('2d');
-        new Chart(barCtx, {
-            type: 'bar',
-            data: {
-                labels: <?php echo json_encode(array_keys($monthlyExpenses)); ?>,
-                datasets: [{
-                    label: 'Monthly Expenses',
-                    data: <?php echo json_encode(array_values($monthlyExpenses)); ?>,
-                    backgroundColor: 'rgba(54, 162, 235, 0.5)',
-                    borderColor: 'rgba(54, 162, 235, 1)',
-                    borderWidth: 1
-                }]
+        const barOptions = {
+            chart: {
+                type: 'bar',
+                height: 300,
+                toolbar: {
+                    show: false
+                }
             },
-            options: {
-                responsive: true,
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        title: {
-                            display: true,
-                            text: 'Expenses (₹)'
-                        }
-                    },
-                    x: {
-                        title: {
-                            display: true,
-                            text: 'Month'
-                        }
-                    }
-                },
+            series: [{
+                name: 'Monthly Expenses',
+                data: <?php echo json_encode(array_values($monthlyExpenses)); ?>
+            }],
+            xaxis: {
+                categories: <?php echo json_encode(array_keys($monthlyExpenses)); ?>,
                 title: {
-                    display: true,
-                    text: 'Monthly Expenses History'
+                    text: 'Month'
+                }
+            },
+            yaxis: {
+                title: {
+                    text: 'Expenses (₹)'
+                },
+                min: 0
+            },
+            title: {
+                text: 'Monthly Expenses History',
+                align: 'center',
+                style: {
+                    fontSize: '16px',
+                    fontWeight: 'bold',
+                    color: '#2c3e50'
+                }
+            },
+            tooltip: {
+                theme: 'dark',
+                style: {
+                    fontSize: '14px',
+                    fontWeight: 'bold',
+                    color: '#fff',
+                },
+                x: {
+                    show: true,
+                },
+                y: {
+                    formatter: function(val) {
+                        return '₹' + val;
+                    }
+                }
+            },
+            colors: ['#4BC0C0'],
+            dataLabels: {
+                enabled: false
+            },
+            plotOptions: {
+                bar: {
+                    horizontal: false,
+                    columnWidth: '55%',
+                    endingShape: 'rounded'
                 }
             }
-        });
+        };
+
+        const barChart = new ApexCharts(document.querySelector("#monthlyExpensesChart"), barOptions);
+        barChart.render();
     </script>
 </body>
 </html>

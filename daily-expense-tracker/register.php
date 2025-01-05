@@ -1,23 +1,13 @@
 <?php
 session_start();
-require_once 'includes/database.php'; // Ensure this points to your database connection
-require_once 'includes/functions.php'; // Include your functions file if needed
+require_once 'includes/database.php';
+require_once 'includes/functions.php';
 
-// Enable error reporting
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
-// Initialize variables
-$firstName = '';
-$lastName = '';
-$email = '';
-$mobileNumber = '';
-$password = '';
-$confirmPassword = '';
-$gender = '';
-$error = '';
+$firstName = $lastName = $email = $mobileNumber = $password = $confirmPassword = $gender = $error = '';
 
-// Process the form when it's submitted
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['firstName'], $_POST['lastName'], $_POST['email'], $_POST['mobileNumber'], $_POST['password'], $_POST['confirmPassword'], $_POST['gender'])) {
         $firstName = sanitize($_POST['firstName']);
@@ -28,32 +18,43 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $confirmPassword = $_POST['confirmPassword'];
         $gender = sanitize($_POST['gender']);
 
-        // Validate passwords
-        if ($password === $confirmPassword) {
-            // Check if email already exists
+        if (empty($firstName) || empty($lastName) || empty($email) || empty($mobileNumber) || empty($password) || empty($confirmPassword) || empty($gender)) {
+            $error = "Please fill in all required fields.";
+        } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            $error = "Invalid email format.";
+        } elseif (!preg_match('/^[0-9]{10}$/', $mobileNumber)) {
+            $error = "Mobile number must be 10 digits.";
+        } elseif ($password !== $confirmPassword) {
+            $error = "Passwords do not match.";
+        } elseif (strlen($password) < 8) {
+            $error = "Password must be at least 8 characters long.";
+        } elseif (!preg_match('/[A-Z]/', $password)) {
+            $error = "Password must contain at least one uppercase letter.";
+        } elseif (!preg_match('/[0-9]/', $password)) {
+            $error = "Password must contain at least one number.";
+        } elseif (!preg_match('/[\W_]/', $password)) {
+            $error = "Password must contain at least one special character.";
+        } else {
             $stmt = $conn->prepare("SELECT * FROM tbluser WHERE Email = ?");
-            $stmt->bind_param('s', $email); // 's' indicates the type is string
+            $stmt->bind_param('s', $email);
             $stmt->execute();
             $result = $stmt->get_result();
 
             if ($result->num_rows == 0) {
                 $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
                 $stmt = $conn->prepare("INSERT INTO tbluser (FirstName, LastName, Email, MobileNumber, Password, Gender) VALUES (?, ?, ?, ?, ?, ?)");
-                $stmt->bind_param('ssssss', $firstName, $lastName, $email, $mobileNumber, $hashedPassword, $gender); // 'ssssss' indicates six strings
+                $stmt->bind_param('ssssss', $firstName, $lastName, $email, $mobileNumber, $hashedPassword, $gender);
 
-                // Execute the statement and check for errors
                 if ($stmt->execute()) {
-                    $_SESSION['user_id'] = $conn->insert_id; // Get the last inserted ID
+                    $_SESSION['user_id'] = $conn->insert_id;
                     header("Location: dashboard.php");
-                    exit(); // Always make sure to exit after a header redirect
+                    exit();
                 } else {
                     $error = "There was an error registering your account: " . $stmt->error;
                 }
             } else {
                 $error = "Email already registered. Please use a different email.";
             }
-        } else {
-            $error = "Passwords do not match.";
         }
     } else {
         $error = "Please fill in all required fields.";
@@ -67,10 +68,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
     <title>Register</title>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600&display=swap');
-
         * {
             box-sizing: border-box;
             margin: 0;
@@ -84,53 +84,56 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             justify-content: center;
             align-items: center;
             min-height: 100vh;
-            margin: 0;
             padding: 20px;
         }
 
         .container {
-            background: rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.25);
             backdrop-filter: blur(10px);
-            padding: 30px;
-            border-radius: 15px;
+            border-radius: 20px;
+            padding: 40px;
             box-shadow: 0 8px 32px rgba(31, 38, 135, 0.37);
-            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.18);
             width: 100%;
-            max-width: 400px;
-            transform: translateY(20px);
-            opacity: 0;
+            max-width: 450px;
             animation: fadeInUp 0.6s ease-out forwards;
+            transition: transform 0.3s ease;
+        }
+
+        .container:hover {
+            transform: translateY(-5px);
         }
 
         h2 {
             color: #333;
             margin-bottom: 20px;
-            font-size: 24px;
+            font-size: 28px;
             font-weight: 600;
+            text-align: center;
         }
 
         .input-group {
             position: relative;
-            margin-bottom: 15px;
+            margin-bottom: 20px;
         }
 
         .input-group input,
         .input-group select {
             width: 100%;
             padding: 12px 12px 12px 40px;
-            border: none;
-            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            border-radius: 10px;
             background: rgba(255, 255, 255, 0.2);
-            box-shadow: inset 2px 2px 5px #BABECC, inset -5px -5px 10px #FFF;
             color: #333;
-            font-size: 14px;
+            font-size: 16px;
             transition: all 0.3s ease;
         }
 
         .input-group input:focus,
         .input-group select:focus {
             outline: none;
-            box-shadow: inset 1px 1px 2px #BABECC, inset -1px -1px 2px #FFF;
+            border-color: #4bc0c0;
+            box-shadow: 0 0 5px rgba(75, 192, 192, 0.5);
         }
 
         .input-group i {
@@ -139,36 +142,68 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             top: 50%;
             transform: translateY(-50%);
             color: #4bc0c0;
+            pointer-events: none;
+        }
+
+        .password-group {
+            position: relative;
+        }
+
+        .password-group input {
+            padding-right: 100px; /* Make room for the strength indicator */
+        }
+
+        .password-strength {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-family: 'Roboto Mono', monospace;
+            font-size: 12px;
+            font-weight: 700;
+            transition: all 0.3s ease;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .password-strength.visible {
+            opacity: 1;
+        }
+
+        .strength-too-short,
+        .strength-weak {
+            color: #ff4757;
+        }
+
+        .strength-medium {
+            color: #ffa502;
+        }
+
+        .strength-strong {
+            color: #4caf50;
         }
 
         button {
             background-color: #4bc0c0;
             color: white;
-            padding: 12px 20px;
+            padding: 14px 20px;
             border: none;
-            border-radius: 8px;
-            font-size: 16px;
+            border-radius: 10px;
+            font-size: 18px;
             cursor: pointer;
             transition: all 0.3s ease;
-            box-shadow: -5px -5px 20px #FFF, 5px 5px 20px #BABECC;
             width: 100%;
             margin-top: 10px;
         }
 
         button:hover {
             background-color: #36a2a2;
-            transform: translateY(-2px);
-            box-shadow: -2px -2px 5px #FFF, 2px 2px 5px #BABECC;
-        }
-
-        button:active {
-            transform: translateY(0);
-            box-shadow: inset 1px 1px 2px #BABECC, inset -1px -1px 2px #FFF;
         }
 
         p {
-            margin-top: 15px;
+            margin-top: 20px;
             font-size: 14px;
+            text-align: center;
         }
 
         a {
@@ -185,9 +220,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             color: #ff4757;
             font-size: 14px;
             margin-bottom: 15px;
+            text-align: center;
+            animation: shake 0.5s ease;
         }
 
         @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
             to {
                 opacity: 1;
                 transform: translateY(0);
@@ -200,8 +241,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             20%, 40%, 60%, 80% { transform: translateX(10px); }
         }
 
-        .shake {
-            animation: shake 0.82s cubic-bezier(.36,.07,.19,.97) both;
+        @keyframes pulse {
+            0% { transform: translateY(-50%) scale(1); }
+            50% { transform: translateY(-50%) scale(1.05); }
+            100% { transform: translateY(-50%) scale(1); }
         }
     </style>
 </head>
@@ -226,17 +269,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </div>
             <div class="input-group">
                 <i class="fas fa-phone"></i>
-                <input type="tel" name="mobileNumber" required placeholder="Mobile Number" value="<?php echo htmlspecialchars($mobileNumber ?? ''); ?>">
+                <input type="tel" name="mobileNumber" required placeholder="Mobile Number" value="<?php echo htmlspecialchars($mobileNumber ?? ''); ?>" pattern="[0-9]{10}" title="Mobile number must be 10 digits.">
+            </div>
+            <div class="input-group password-group">
+                <i class="fas fa-lock"></i>
+                <input type="password" name="password" id="password" required placeholder="Password" minlength="8" title="Password must be at least 8 characters long.">
+                <div class="password-strength" id="passwordStrength"></div>
             </div>
             <div class="input-group">
                 <i class="fas fa-lock"></i>
-                <input type="password" name="password" required placeholder="Password">
+                <input type="password" name="confirmPassword" required placeholder="Confirm Password" minlength="8" title="Password must be at least 8 characters long.">
             </div>
             <div class="input-group">
-                <i class="fas fa-lock"></i>
-                <input type="password" name="confirmPassword" required placeholder="Confirm Password">
-            </div>
-            <div class="input-group">
+                <i class="fas fa-venus-mars"></i>
                 <select name="gender" required>
                     <option value="">Select Gender</option>
                     <option value="Male" <?php if ($gender === 'Male') echo 'selected'; ?>>Male</option>
@@ -247,5 +292,45 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <p>Already have an account? <a href="login.php">Login here</a></p>
         </form>
     </div>
+
+    <script>
+        document.getElementById('password').addEventListener('input', function() {
+            const password = this.value;
+            const strengthIndicator = document.getElementById('passwordStrength');
+            let strength = '';
+
+            if (password.length < 8) {
+                strength = 'Too short';
+                strengthIndicator.className = 'password-strength strength-too-short';
+            } else if (password.length < 10) {
+                strength = 'Weak';
+                strengthIndicator.className = 'password-strength strength-weak';
+            } else if (password.match(/[A-Z]/) && password.match(/[0-9]/) && password.match(/[\W_]/)) {
+                strength = 'Strong';
+                strengthIndicator.className = 'password-strength strength-strong';
+            } else {
+                strength = 'Medium';
+                strengthIndicator.className = 'password-strength strength-medium';
+            }
+
+            strengthIndicator.textContent = strength;
+            strengthIndicator.classList.add('visible');
+            strengthIndicator.style.animation = 'pulse 0.5s ease-in-out';
+            setTimeout(() => {
+                strengthIndicator.style.animation = '';
+            }, 500);
+        });
+
+        document.querySelectorAll('input, select').forEach(input => {
+            input.addEventListener('input', function() {
+                if (this.value.trim() === '') {
+                    this.style.borderColor = '#ff4757';
+                } else {
+                    this.style.borderColor = 'rgba(255, 255, 255, 0.5)';
+                }
+            });
+        });
+    </script>
 </body>
 </html>
+

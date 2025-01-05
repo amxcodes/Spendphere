@@ -60,6 +60,38 @@ function updateProfile(int $userId, string $firstName, string $lastName, string 
     }
 }
 
+function editCategory($categoryId, $newCategoryName) {
+    global $pdo;
+
+    // Get the logged-in user's ID
+    $userId = $_SESSION['user_id'];
+
+    // Prepare and execute the query to update the category name for the logged-in user
+    $stmt = $pdo->prepare("
+        UPDATE tblcategory 
+        SET CategoryName = :categoryName 
+        WHERE ID = :categoryId 
+        AND UserId = :userId
+    ");
+    $stmt->bindParam(':categoryName', $newCategoryName);
+    $stmt->bindParam(':categoryId', $categoryId);
+    $stmt->bindParam(':userId', $userId);
+
+    // Execute the query and return true if successful, otherwise false
+    return $stmt->execute();
+}
+
+function deleteCategory($id) {
+    global $conn; // Assuming $conn is your database connection
+    $stmt = $conn->prepare("DELETE FROM tblcategory WHERE ID = ?");
+    $stmt->bind_param("i", $id);
+    return $stmt->execute();
+}
+
+
+
+
+
 // Function to retrieve user details
 function getUserDetails(int $userId): array {
     global $conn;
@@ -186,34 +218,55 @@ function getExpenses(int $userId): array {
 function getCategoryExpenses(int $userId): array {
     global $conn;
 
-    try {
-        $query = "SELECT 
-                    c.CategoryName,
-                    COALESCE(SUM(e.ExpenseCost), 0) AS TotalExpense
-                FROM tblcategory c
-                LEFT JOIN tblexpense e ON c.ID = e.CategoryID AND e.UserId = ?
-                GROUP BY c.ID, c.CategoryName";
+    $categoryExpenses = [];
 
+    try {
+        // Define the SQL query
+        $query = "
+            SELECT 
+                c.CategoryName,
+                COALESCE(SUM(e.ExpenseCost), 0) AS TotalExpense
+            FROM tblcategory c
+            LEFT JOIN tblexpense e 
+                ON c.ID = e.CategoryID AND e.UserId = ?
+            WHERE c.UserID = ? -- Ensures only categories created by the logged-in user
+            GROUP BY c.ID, c.CategoryName
+            ORDER BY c.CategoryName";
+
+        // Prepare the statement
         $stmt = $conn->prepare($query);
         if (!$stmt) {
-            throw new DatabaseException("Prepare failed: " . $conn->error);
+            throw new Exception("Statement preparation failed: " . $conn->error);
         }
 
-        $stmt->bind_param("i", $userId);
+        // Bind parameters
+        $stmt->bind_param("ii", $userId, $userId);
+
+        // Execute the statement
         if (!$stmt->execute()) {
-            throw new DatabaseException("Execute failed: " . $stmt->error);
+            throw new Exception("Statement execution failed: " . $stmt->error);
         }
 
+        // Fetch the results
         $result = $stmt->get_result();
-        $categoryExpenses = [];
         while ($row = $result->fetch_assoc()) {
             $categoryExpenses[$row['CategoryName']] = (float)$row['TotalExpense'];
         }
-        return $categoryExpenses;
+
+        // Free result set
+        $result->free();
+
     } catch (Exception $e) {
-        error_log("Error retrieving category expenses: " . $e->getMessage());
-        return [];
+        // Log the error for debugging
+        error_log("Error in getCategoryExpenses: " . $e->getMessage());
+    } finally {
+        // Close the prepared statement
+        if (isset($stmt) && $stmt instanceof mysqli_stmt) {
+            $stmt->close();
+        }
     }
+
+    return $categoryExpenses;
 }
 
 // Function to get linked users for a user
@@ -283,35 +336,35 @@ function validateDate($date, $format = 'Y-m-d') {
 
 
 // Function to get categories from the database
-function getcategories($userId = null): array {
+function getCategories($userId = null): array {
     global $conn;
     try {
-        $query = "SELECT ID, userid, CategoryName FROM tblcategory";
-        $params = [];
-        
-        if ($userId !== null) {
-            $query .= " WHERE UserId = ? OR UserId IS NULL";
-            $params[] = $userId;
+        // Use the logged-in user's ID if not provided
+        if ($userId === null) {
+            $userId = $_SESSION['user_id']; // Get the logged-in user's ID from the session
         }
-        
-        $query .= " ORDER BY CategoryName";
+
+        // Prepare the query to select categories for the logged-in user
+        $query = "SELECT ID, UserId, CategoryName FROM tblcategory WHERE UserId = ? ORDER BY CategoryName";
         
         $stmt = $conn->prepare($query);
         if (!$stmt) {
             throw new DatabaseException("Prepare failed: " . $conn->error);
         }
-        
-        if (!empty($params)) {
-            $stmt->bind_param(str_repeat("i", count($params)), ...$params);
-        }
-        
+
+        // Bind the logged-in user's ID to the query
+        $stmt->bind_param("i", $userId);
+
+        // Execute the query and check for success
         if (!$stmt->execute()) {
             throw new DatabaseException("Execute failed: " . $stmt->error);
         }
-        
+
+        // Fetch and return the results as an associative array
         $result = $stmt->get_result();
         return $result->fetch_all(MYSQLI_ASSOC);
     } catch (Exception $e) {
+        // Log any errors and return an empty array
         error_log("Error retrieving categories: " . $e->getMessage());
         return [];
     }
@@ -323,8 +376,10 @@ function safeOutput($string) {
 }
 
 // Function to generate a select element for categories
-function generateCategorySelect($selectedId = null) {
-    $categories = getCategories();
+function generateCategorySelect($selectedId = null, $userId = null) {
+    // Fetch categories filtered by UserID (assuming getCategories accepts a userId parameter)
+    $categories = getCategories($userId);
+    
     $output = '<select name="category" id="category">';
     foreach ($categories as $category) {
         $selected = ($selectedId == $category['ID']) ? 'selected' : '';
@@ -332,8 +387,10 @@ function generateCategorySelect($selectedId = null) {
                    safeOutput($category['CategoryName']) . '</option>';
     }
     $output .= '</select>';
+    
     return $output;
 }
+
 
 // Function to get expenses for the last 7 days
 function getLastSevenDaysExpenses(int $userId): float {
@@ -791,20 +848,32 @@ function checkBudgetUpdateReminder($userId) {
 function addCategory($categoryName) {
     global $conn;
     try {
-        $stmt = $conn->prepare("INSERT INTO tblcategory (CategoryName) VALUES (?)");
+        // Retrieve the logged-in user's ID from the session
+        $userId = $_SESSION['user_id'];
+
+        // Prepare the SQL query to insert the category along with the UserId
+        $stmt = $conn->prepare("INSERT INTO tblcategory (CategoryName, UserId) VALUES (?, ?)");
         if (!$stmt) {
             throw new DatabaseException("Prepare failed: " . $conn->error);
         }
-        $stmt->bind_param("s", $categoryName);
+
+        // Bind the parameters for category name and user ID
+        $stmt->bind_param("si", $categoryName, $userId);
+
+        // Execute the query and check for success
         if (!$stmt->execute()) {
             throw new DatabaseException("Execute failed: " . $stmt->error);
         }
+
+        // Return true if the category was successfully added
         return $stmt->affected_rows > 0;
     } catch (Exception $e) {
+        // Log any error that occurs during the process
         error_log("Error adding category: " . $e->getMessage());
         return false;
     }
 }
+
 
 // ... (remaining functions stay the same)
 

@@ -25,6 +25,9 @@ $last7DaysData = getLast7DaysExpenses($userId);
 $currentMonthSummary = getCurrentMonthSummary($userId);
 
 $reminderMessage = checkBudgetUpdateReminder($currentUserId);
+
+$categoryLabels = array_keys($categoryExpenses);
+
 ?>
 
 <!DOCTYPE html>
@@ -32,7 +35,7 @@ $reminderMessage = checkBudgetUpdateReminder($currentUserId);
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Expense Dashboard</title>
+  <title>Dashboard</title>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.9.1/gsap.min.js"></script>
@@ -52,13 +55,13 @@ $reminderMessage = checkBudgetUpdateReminder($currentUserId);
 }
 
 .dark-mode {
-  --primary-color: #8c7ae6;
+  --primary-color:rgb(255, 255, 255);
   --secondary-color: #b0a8fd;
-  --accent-color: #00ffe5;
+  --accent-color:rgb(2, 80, 182);
   --text-color: #ecf0f1;
   --background-color: #1a1a2e;
   --card-background: linear-gradient(135deg, #4834d4, #686de0);
-  --chart-background: rgba(44, 62, 80, 0.8);
+  --chart-background: rgba(5, 5, 5, 0.8);
   --shadow-color: rgba(0, 0, 0, 0.3);
 }
 
@@ -95,6 +98,8 @@ h1 {
   margin-bottom: 1.5rem;
   color: var(--primary-color);
 }
+
+
 
 .dashboard-grid {
   display: grid;
@@ -283,7 +288,7 @@ h1 {
 
 .toggle.dark .switch {
   transform: translateX(34px);
-  background: var(--secondary-color);
+  background: var(--accent-color);
 }
 
 @media (max-width: 1200px) {
@@ -336,7 +341,7 @@ h1 {
         </div>
       </div>
 
-      <h1>Expense Dashboard</h1>
+      <h1>Dashboard</h1>
 
       <div class="dashboard-grid">
         <div class="dashboard-card" id="totalExpensesCard">
@@ -445,46 +450,40 @@ const monthlyExpenseChart = new Chart(ctx1, {
 });
 
 // Category Expense Chart (Doughnut)
+
 const categoryExpenseChart = new Chart(ctx2, {
-  type: 'doughnut',
-  data: {
-    labels: categoryLabels,
-    datasets: [{
-      label: 'Category Expenses',
-      data: categoryExpenses,
-      backgroundColor: [
-        'rgba(231, 76, 60, 0.6)',
-        'rgba(46, 204, 113, 0.6)',
-        'rgba(52, 152, 219, 0.6)',
-        'rgba(155, 89, 182, 0.6)',
-        'rgba(241, 196, 15, 0.6)'
-      ],
-      borderWidth: 1
-    }]
-  },
-  options: {
-    responsive: true,
-    maintainAspectRatio: false,
-    layout: {
-      padding: {
-        top: 10,
-        bottom: 10,
-        left: 10,
-        right: 10
-      }
+    type: 'doughnut',
+    data: {
+        labels: categoryLabels, // Use dynamic labels
+        datasets: [{
+            label: 'Category Expenses',
+            data: categoryExpenses, // Use dynamic data
+            backgroundColor: [
+                'rgba(231, 76, 60, 0.6)',
+                'rgba(46, 204, 113, 0.6)',
+                'rgba(52, 152, 219, 0.6)',
+                'rgba(155, 89, 182, 0.6)',
+                'rgba(241, 196, 15, 0.6)',
+            ],
+            borderWidth: 1
+        }]
     },
-    plugins: {
-      legend: {
-        position: 'right',
-        labels: {
-          font: {
-            size: 8  // Reduced font size
-          }
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                position: 'right',
+                labels: {
+                    font: {
+                        size: 8 // Adjust font size
+                    }
+                }
+            }
         }
-      }
     }
-  }
 });
+
 
 // Last 7 Days Expense Chart (Line)
 const last7DaysChart = new Chart(ctx3, {
