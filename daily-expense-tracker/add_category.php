@@ -41,14 +41,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_category'])) {
 }
 
 // Handle deleting a category
-if (isset($_GET['delete_id'])) {
-    $delete_id = (int)$_GET['delete_id'];
-    if (deleteCategory($delete_id)) {
+// Handle deleting a category
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_id']) && isset($_POST['csrf_token'])) {
+    // Validate CSRF token
+    if ($_POST['csrf_token'] !== $_SESSION['csrf_token']) {
+        die("CSRF token validation failed. Please try again.");
+    }
+
+    $delete_id = (int)$_POST['delete_id'];
+
+    // Call deleteCategory function with user ID
+    if (deleteCategory($delete_id, $_SESSION['user_id'])) { // Pass user ID as well
         $success_message = "Category deleted successfully.";
+        header("Location: add_category.php"); // Redirect to the current page
+        exit; // Stop further execution to prevent resubmission
     } else {
-        $error_message = "Failed to delete category. Please try again.";
+        $error_message = "Failed to delete category or insufficient permissions.";
     }
 }
+
+    
 
 // Fetch existing categories
 $categories = getCategories();
@@ -295,8 +307,32 @@ if ($categories === false) {
                         <tr>
                             <td><?php echo htmlspecialchars($category['CategoryName']); ?></td>
                             <td>
-                                <a href="edit_category.php?id=<?php echo $category['ID']; ?>">Edit</a>
-                                <a href="?delete_id=<?php echo $category['ID']; ?>" onclick="return confirm('Are you sure you want to delete this category?');">Delete</a>
+                                <a href="edit_category.php?id=<?php echo $category['ID']; ?>" class="btn-edit"></a>
+                                <div style="display: flex; gap: 10px;">
+                                    <a href="edit_category.php?id=<?php echo $category['ID']; ?>" 
+                                       style="background: rgba(108, 92, 231, 0.3);
+                                              color: #2c3e50;
+                                              padding: 0.5rem 1rem;
+                                              border-radius: 8px;
+                                              text-decoration: none;
+                                              border: 1px solid rgba(255, 255, 255, 0.3);
+                                              backdrop-filter: blur(5px);
+                                              transition: all 0.3s ease;">Edit</a>
+                                    <form method="POST" style="display: inline;">
+                                        <input type="hidden" name="delete_id" value="<?php echo $category['ID']; ?>">
+                                        <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
+                                        <button type="submit" 
+                                                onclick="return confirm('Are you sure you want to delete this category?');"
+                                                style="background: rgba(255, 87, 87, 0.3);
+                                                       color: #c0392b;
+                                                       padding: 0.5rem 1rem;
+                                                       border-radius: 8px;
+                                                       border: 1px solid rgba(255, 87, 87, 0.3);
+                                                       cursor: pointer;
+                                                       backdrop-filter: blur(5px);
+                                                       transition: all 0.3s ease;">Delete</button>
+                                    </form>
+                                </div></form>
                             </td>
                         </tr>
                     <?php endforeach; ?>

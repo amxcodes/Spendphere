@@ -81,16 +81,72 @@ function editCategory($categoryId, $newCategoryName) {
     return $stmt->execute();
 }
 
-function deleteCategory($id) {
-    global $conn; // Assuming $conn is your database connection
-    $stmt = $conn->prepare("DELETE FROM tblcategory WHERE ID = ?");
-    $stmt->bind_param("i", $id);
-    return $stmt->execute();
+
+
+
+
+function deleteCategory($categoryId, $userId) {
+    global $conn;
+
+    try {
+        // Validate inputs
+        if (!is_numeric($categoryId) || !is_numeric($userId) || $userId <= 0 || $categoryId <= 0) {
+            throw new Exception("Invalid category ID or user ID");
+        }
+
+        // Start transaction to ensure data consistency
+        $conn->begin_transaction();
+
+        // First, check if the category exists and belongs to the user
+        $checkStmt = $conn->prepare("SELECT ID FROM tblcategory WHERE ID = ? AND UserId = ?");
+        if (!$checkStmt) {
+            throw new Exception("Error preparing check statement");
+        }
+        $checkStmt->bind_param("ii", $categoryId, $userId);
+        if (!$checkStmt->execute()) {
+            throw new Exception("Error executing check statement");
+        }
+        $result = $checkStmt->get_result();
+
+        if ($result->num_rows === 0) {
+            throw new Exception("Category not found or insufficient permissions");
+        }
+
+        // Check if there are any expenses using this category
+        $expenseCheckStmt = $conn->prepare("SELECT COUNT(*) as count FROM tblexpense WHERE CategoryID = ?");
+        $expenseCheckStmt->bind_param("i", $categoryId);
+        $expenseCheckStmt->execute();
+        $expenseResult = $expenseCheckStmt->get_result();
+        $expenseCount = $expenseResult->fetch_assoc()['count'];
+
+        if ($expenseCount > 0) {
+            throw new Exception("Cannot delete category: There are expenses linked to this category");
+        }
+
+        // Delete the category
+        $deleteStmt = $conn->prepare("DELETE FROM tblcategory WHERE ID = ? AND UserId = ?");
+        if (!$deleteStmt) {
+            throw new Exception("Error preparing delete statement");
+        }
+
+        $deleteStmt->bind_param("ii", $categoryId, $userId);
+        if (!$deleteStmt->execute()) {
+            throw new Exception("Error executing delete statement");
+        }
+
+        if ($deleteStmt->affected_rows === 0) {
+            throw new Exception("No category was deleted");
+        }
+
+        $conn->commit();
+        return true;
+
+    } catch (Exception $e) {
+        $conn->rollback();
+        error_log("Error deleting category: " . $e->getMessage());
+        return false;
+    }
 }
-
-
-
-
 
 // Function to retrieve user details
 function getUserDetails(int $userId): array {
